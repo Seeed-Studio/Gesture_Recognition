@@ -101,6 +101,99 @@ void Gesture::accelerateInit(void)
 	adxl.setInterrupt( ADXL345_INT_INACTIVITY_BIT, 1);
 }
 
+
+int Gesture::getVergence(void)
+{
+    int x,y,z;
+    int count0 = 0,count1 = 0,count2 = 0;
+    while(1){
+        adxl.readXYZ(&x, &y, &z);
+        if((abs(x) > 100) || (abs(y) > 100)){
+            if((x<-100)&&(abs(y)<70)){
+                if(++count0>10){
+                    break;
+                }
+            }else if((y>100)&&(abs(x)<70)){
+                if(++count1>10){
+                    break;
+                }
+            }else if((y<-100)&&(abs(x)<70)){
+                if(++count2>10){
+                    break;
+                }
+            }            
+        }
+        delay(50);
+    }
+    if(++count0>10){
+        return 0;
+    }else if(++count1>10){
+        return 1;
+    }else if(++count2>10){           
+        return 2;
+    }
+}
+
+int Gesture::checkHighSpeedShake(void)
+{
+  int tmp[10][3];
+  int highSpeedShakeCount = 0;
+  for(int i = 0; i < 10; i ++){
+    adxl.readXYZ(&tmp[i][0], &tmp[i][1], &tmp[i][2]);
+    if((abs(tmp[i][0]) > 400) || (abs(tmp[i][1]) > 400) || (abs(tmp[i][2]) > 400)){
+      highSpeedShakeCount += 1;
+    }
+  }
+  return highSpeedShakeCount;
+}
+
+int Gesture::wakeUp(void)
+{   
+    int x, y, z;
+    int notMoveStartDetect = 0;
+    int notMoveStartCount = 0;
+    adxl.readXYZ(&y, &x, &z);
+    //Serial.print("\r\n test");
+    if((abs(x) > 500) || (abs(y) > 500) || (abs(z) > 500)){
+        unsigned long timerStart,timerEnd;
+        timerStart = millis();
+        while(1){
+            int highSpeedShakeCount = checkHighSpeedShake();
+#if DEBUG
+            Serial.print("\r\nhighSpeedCount = ");
+            Serial.print(highSpeedShakeCount);
+#endif
+            if(highSpeedShakeCount < 2){
+                if(!notMoveStartDetect){
+                    notMoveStartDetect = 1; 
+                }
+                notMoveStartCount++;
+            }else{
+                if(notMoveStartDetect){
+                    notMoveStartDetect = 0;
+                    notMoveStartCount = 0;
+                }
+            }
+            if(notMoveStartDetect){
+                if(notMoveStartCount >= 2){
+                    gestureWakeUp = 0;
+                    notMoveStartDetect = 0;
+                    break;
+                }
+            }      
+            timerEnd = millis();
+            if(timerEnd - timerStart > 1000) {
+                gestureWakeUp = 1;
+                //digitalWrite(led,HIGH);
+ //               Serial.print("gesture Wake Up\r\n");
+                break;
+            }
+            delay(100);
+        }
+    }
+    return 0;
+}
+
 int Gesture::checkMoveStart(void)
 {
     int x,y,z;

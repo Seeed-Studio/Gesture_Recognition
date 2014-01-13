@@ -51,7 +51,14 @@ public:
 	/**	initialize member variable and 3-Axis Digital Accelerometer
 	 */
 	void init(void);
-	
+    
+    /** be ready to recognize gesture
+     */
+     
+    int getVergence(void);
+    
+	int wakeUp(void);
+    
 	/** check whether gesture has been started
 	 *  @returns
 	 *      0 on success
@@ -89,12 +96,20 @@ public:
 	/** sampling number count
 	 */
 	int samplingIndex;
+    
+    /** start flag
+     */
+    int gestureWakeUp;
 	
 private:
 	/** initialize 3-Axis Digital Accelerometer
 	 */
 	void accelerateInit(void);
 	
+    /** check whether adxl is in high speed shake mode
+     */
+    int checkHighSpeedShake(void);
+    
 	/** obtain adjust parameter before start drawing gesture
 	 */
 	void obtainAdjustParameter(int &model_x,int &model_z);
